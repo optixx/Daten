@@ -5,3 +5,5 @@ env-boostrap:
 pip-install:
 	uv pip install -r requirements.txt
 
+run:
+	python convert.py --path data --prefix 1kHz

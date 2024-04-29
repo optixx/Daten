@@ -1,92 +1,60 @@
 import os
 import sys
-import click 
-import csv
-import pprint
+import click
 import glob
-import xlsxwriter
+import logging
+import chardet
+import pandas as pd
 
-from collections import defaultdict
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
 
 
-
-def calc_average_one_file(filename, skip):
-    
-    print("Process ", filename)
-    result = defaultdict(dict)
-    with open(filename) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter="\t")
-        line_count = 0
-        
-        for i in range(skip):
-            next(csv_reader, None)
-        channels = next(csv_reader)
-        units = next(csv_reader)
-   
-        
-        for row in csv_reader:
-            for i, el in enumerate(row):
-                if i < 2:
-                    continue
-                channel = channels[i]
-                unit = units[i]
-                result[channel]["unit"] = unit
-                if "size" not in result[channel]:
-                    result[channel]["size"] = 0
-                result[channel]["size"] += 1
-                if "sum" not in result[channel]:
-                    result[channel]["sum"] = 0
-
-                result[channel]["sum"] += float(el)
-        result_row = []
-        for key, val in result.items():
-            result_row.append(val["sum"] / val["size"] ) 
-        return channels[2:], units[2:], result_row 
-        
-    
-        
 @click.command()
-@click.option('--path', prompt='The path',
-              help='Location of files')
-@click.option('--prefix', prompt='The file prefix pattern',
-              help='File prefix pattern')
-@click.option('--skip', default=2,
-              help='Number header lines to skip')
-
+@click.option("--path", prompt="The path", help="Location of files")
+@click.option("--prefix", prompt="The file prefix pattern", help="File prefix pattern")
+@click.option("--skip", default=2, help="Number header lines to skip")
 def main(path, prefix, skip):
-    result_rows = []
-    for name in glob.glob(f"{path}\{prefix}*"): 
-        channels, units, result_row = calc_average_one_file(name, skip)
-        result_rows.append(result_row)
+    m = []
+    s = []
+    # Iterate over all files
+    for filename in glob.glob(f"{os.path.join(path, prefix)}*"):
+        # Get size of file
+        file_stats = os.stat(filename)
+        # Guess encoding of file
+        with open(filename, "rb") as f:
+            result = chardet.detect(f.read(max(int(file_stats.st_size / 100), 1)))
+        logger.info(
+            f"Reading data from {filename}, {file_stats.st_size / 1024} kb with encoding {result['encoding']}"
+        )
+        # Read file into datafram
+        df = pd.read_csv(
+            filename,
+            header=[0, 1],  # Use both header lines
+            encoding=result["encoding"],
+            delimiter="\t",
+            dtype=float,
+            skiprows=2,  # Skip first 2 lines
+            parse_dates=[0, 1],  # Combine Datum and Zeit
+            date_format="%d-%m-%Y %H:%M:%S.%f",
+            na_values={"?"},
+        )
+        # Calc mean() and store result
+        s.append(df.mean(numeric_only=True))
+        # Calc std() and store result
+        m.append(df.std(numeric_only=True))
 
-    print(channels)
-    output_filename = "average.csv"
-    with open(output_filename, 'w') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(channels)
-        csvwriter.writerow(units)
-        for row in result_rows:
-            csvwriter.writerow(row)
+    # Merge mean() results
+    mdf = pd.concat(m, axis=1)
+    mdf.to_excel("mean.xlsx")
+    logger.info("Created mean.xlsx")
+    # Merge sdt() results
+    sdf = pd.concat(m, axis=1)
+    sdf.to_excel("std.xlsx")
+    logger.info("Created std.xlsx")
 
 
-    output_filename = "average.xlsx"
-    workbook = xlsxwriter.Workbook(output_filename)
-    worksheet = workbook.add_worksheet()
-
-
-    for i, item in enumerate(channels):
-        worksheet.write(0, i,     item)
-    for i, item in enumerate(units):
-        worksheet.write(1, i, item)
-
-    for y, row in enumerate(result_rows):
-        for x, item in enumerate(row):
-            if isinstance(item, float) and not item == float("inf"):
-                worksheet.write(y + 2, x, item)
-    workbook.close()
-
-            
-            
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
