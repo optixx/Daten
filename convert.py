@@ -5,6 +5,7 @@ import glob
 import logging
 import chardet
 import pandas as pd
+import matplotlib.pyplot as plt
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -49,10 +50,14 @@ def main(path, prefix, skip):
     # Merge mean() results
     mdf = pd.concat(m, axis=1)
     mdf.to_excel("mean.xlsx")
+    mdf.plot()
+    plt.savefig("mean.pdf")
     logger.info("Created mean.xlsx")
     # Merge sdt() results
     sdf = pd.concat(s, axis=1)
     sdf.to_excel("std.xlsx")
+    sdf.plot()
+    plt.savefig("std.pdf")
     logger.info("Created std.xlsx")
 
 

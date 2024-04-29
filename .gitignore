@@ -2,3 +2,4 @@ data
 .envrc
 *.csv
 *.xlsx
+*.pdf
