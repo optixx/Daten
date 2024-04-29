@@ -42,16 +42,16 @@ def main(path, prefix, skip):
             na_values={"?"},
         )
         # Calc mean() and store result
-        s.append(df.mean(numeric_only=True))
+        m.append(df.mean(numeric_only=True))
         # Calc std() and store result
-        m.append(df.std(numeric_only=True))
+        s.append(df.std(numeric_only=True))
 
     # Merge mean() results
     mdf = pd.concat(m, axis=1)
     mdf.to_excel("mean.xlsx")
     logger.info("Created mean.xlsx")
     # Merge sdt() results
-    sdf = pd.concat(m, axis=1)
+    sdf = pd.concat(s, axis=1)
     sdf.to_excel("std.xlsx")
     logger.info("Created std.xlsx")
 
