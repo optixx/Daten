@@ -20,8 +20,8 @@ logger = logging.getLogger()
 @click.option("--write-excel", default=True, help="Write results to excel files")
 @click.option("--write-pdf", default=True, help="Plot results to pdf file")
 def main(path, prefix, skip, write_excel, write_pdf):
-    m = []
-    s = []
+    results_mean = []
+    results_std = []
     # Iterate over all files
     for filename in glob.glob(f"{os.path.join(path, prefix)}*"):
         # Get size of file
@@ -45,12 +45,12 @@ def main(path, prefix, skip, write_excel, write_pdf):
             na_values={"?"},
         )
         # Calc mean() and store result
-        m.append(df.mean(numeric_only=True))
+        results_mean.append(df.mean(numeric_only=True))
         # Calc std() and store result
-        s.append(df.std(numeric_only=True))
+        results_std.append(df.std(numeric_only=True))
 
     # Merge mean() results
-    mdf = pd.concat(m, axis=1)
+    mdf = pd.concat(results_mean, axis=1)
     if write_excel:
         mdf.to_excel("mean.xlsx")
         logger.info("Created mean.xlsx")
@@ -59,7 +59,7 @@ def main(path, prefix, skip, write_excel, write_pdf):
         plt.savefig("mean.pdf")
         logger.info("Created mean.pdf")
     # Merge sdt() results
-    sdf = pd.concat(s, axis=1)
+    sdf = pd.concat(results_std, axis=1)
     if write_excel:
         sdf.to_excel("std.xlsx")
         logger.info("Created std.xlsx")

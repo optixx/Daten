@@ -1,3 +1,5 @@
+all: pip-install run
+
 env-boostrap:
 	rm -rvf .venv
 	uv venv
@@ -7,3 +9,4 @@ pip-install:
 
 run:
 	python convert.py --path data --prefix 1kHz
+
