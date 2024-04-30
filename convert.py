@@ -16,10 +16,10 @@ logger = logging.getLogger()
 @click.command()
 @click.option("--path", prompt="The path", help="Location of files")
 @click.option("--prefix", prompt="The file prefix pattern", help="File prefix pattern")
-@click.option("--skip", default=2, help="Number header lines to skip")
+@click.option("--skip-header", default=2, help="Number header lines to skip")
 @click.option("--write-excel", default=True, help="Write results to excel files")
 @click.option("--write-pdf", default=True, help="Plot results to pdf file")
-def main(path, prefix, skip, write_excel, write_pdf):
+def main(path, prefix, skip_header, write_excel, write_pdf):
     results_mean = []
     results_std = []
     # Iterate over all files
@@ -39,7 +39,7 @@ def main(path, prefix, skip, write_excel, write_pdf):
             encoding=result["encoding"],
             delimiter="\t",
             dtype=float,
-            skiprows=skip,  # Skip first 2 lines
+            skiprows=skip_header,  # Skip first 2 lines
             parse_dates=[0, 1],  # Combine Datum and Zeit
             date_format="%d-%m-%Y %H:%M:%S.%f",
             na_values={"?"},
