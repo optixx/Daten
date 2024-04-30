@@ -10,3 +10,6 @@ pip-install:
 run:
 	python convert.py --path data --prefix 1kHz
 
+
+clean:
+	rm -f *.csv *.pdf
