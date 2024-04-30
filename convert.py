@@ -18,7 +18,7 @@ logger = logging.getLogger()
 @click.option("--prefix", prompt="The file prefix pattern", help="File prefix pattern")
 @click.option("--skip-header", default=2, help="Number header lines to skip")
 @click.option("--write-excel", default=True, help="Write results to excel files")
-@click.option("--write-pdf", default=True, help="Plot results to pdf file")
+@click.option("--write-pdf", default=False, help="Plot results to pdf file")
 def main(path, prefix, skip_header, write_excel, write_pdf):
     results_mean = []
     results_std = []
@@ -56,21 +56,21 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
     if write_excel:
         mdf.to_excel(os.path.join(output_dir, "mean.xlsx"))
         logger.info(f"Created mean.xlsx in {output_dir}")
-    # if write_pdf:
-    #     mdf.plot()
-    #     plt.savefig(os.path.join(output_dir, "mean.pdf"))
-    #     plt.close()
-    #     logger.info(f"Created mean.pdf in {output_dir}")
+    if write_pdf:
+        mdf.plot()
+        plt.savefig(os.path.join(output_dir, "mean.pdf"))
+        plt.close()
+        logger.info(f"Created mean.pdf in {output_dir}")
     # Merge std() results
     sdf = pd.concat(results_std, axis=1)
     if write_excel:
         sdf.to_excel(os.path.join(output_dir, "std.xlsx"))
         logger.info(f"Created std.xlsx in {output_dir}")
-    # if write_pdf:
-    #     sdf.plot()
-    #     plt.savefig(os.path.join(output_dir, "std.pdf"))
-    #     plt.close()
-    #     logger.info(f"Created std.pdf in {output_dir}")
+    if write_pdf:
+        sdf.plot()
+        plt.savefig(os.path.join(output_dir, "std.pdf"))
+        plt.close()
+        logger.info(f"Created std.pdf in {output_dir}")
 
 
 if __name__ == "__main__":
