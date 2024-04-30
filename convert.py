@@ -17,7 +17,9 @@ logger = logging.getLogger()
 @click.option("--path", prompt="The path", help="Location of files")
 @click.option("--prefix", prompt="The file prefix pattern", help="File prefix pattern")
 @click.option("--skip", default=2, help="Number header lines to skip")
-def main(path, prefix, skip):
+@click.option("--write-excel", default=True, help="Write results to excel files")
+@click.option("--write-pdf", default=True, help="Plot results to pdf file")
+def main(path, prefix, skip, write_excel, write_pdf):
     m = []
     s = []
     # Iterate over all files
@@ -37,7 +39,7 @@ def main(path, prefix, skip):
             encoding=result["encoding"],
             delimiter="\t",
             dtype=float,
-            skiprows=2,  # Skip first 2 lines
+            skiprows=skip,  # Skip first 2 lines
             parse_dates=[0, 1],  # Combine Datum and Zeit
             date_format="%d-%m-%Y %H:%M:%S.%f",
             na_values={"?"},
@@ -49,16 +51,22 @@ def main(path, prefix, skip):
 
     # Merge mean() results
     mdf = pd.concat(m, axis=1)
-    mdf.to_excel("mean.xlsx")
-    mdf.plot()
-    plt.savefig("mean.pdf")
-    logger.info("Created mean.xlsx")
+    if write_excel:
+        mdf.to_excel("mean.xlsx")
+        logger.info("Created mean.xlsx")
+    if write_pdf:
+        mdf.plot()
+        plt.savefig("mean.pdf")
+        logger.info("Created mean.pdf")
     # Merge sdt() results
     sdf = pd.concat(s, axis=1)
-    sdf.to_excel("std.xlsx")
-    sdf.plot()
-    plt.savefig("std.pdf")
-    logger.info("Created std.xlsx")
+    if write_excel:
+        sdf.to_excel("std.xlsx")
+        logger.info("Created std.xlsx")
+    if write_pdf:
+        sdf.plot()
+        plt.savefig("std.pdf")
+        logger.info("Created std.pdf")
 
 
 if __name__ == "__main__":
