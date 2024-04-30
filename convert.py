@@ -71,6 +71,23 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         plt.savefig(os.path.join(output_dir, "std.pdf"))
         plt.close()
         logger.info(f"Created std.pdf in {output_dir}")
+         
+         
+ # Merge std()and mean() results in one Excel File
+ 
+    if write_excel:
+        with pd.ExcelWriter(os.path.join(output_dir, "summary.xlsx")) as writer:
+            # Write mean DataFrame to Excel
+            mdf.to_excel(writer, sheet_name='Mean')
+            
+             # Modify index names of sdf DataFrame
+            modified_index = [(f"{idx[0]}_s", idx[1]) if isinstance(idx, tuple) and i != 1 else idx for i, idx in enumerate(sdf.index)]
+            sdf.index = pd.MultiIndex.from_tuples(modified_index)
+            
+            # Write std DataFrame to Excel
+            sdf.to_excel(writer, sheet_name='Std')
+        
+        logger.info(f"Created summary.xlsx in {output_dir}")
 
 
 if __name__ == "__main__":
