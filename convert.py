@@ -22,6 +22,8 @@ logger = logging.getLogger()
 def main(path, prefix, skip_header, write_excel, write_pdf):
     results_mean = []
     results_std = []
+    output_dir = os.path.abspath(path)  # Get absolute path for output directory
+    logger.info(f"Output directory: {output_dir}")  # Output the output directory path
     # Iterate over all files
     for filename in glob.glob(f"{os.path.join(path, prefix)}*"):
         # Get size of file
@@ -32,7 +34,7 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         logger.info(
             f"Reading data from {filename}, {file_stats.st_size / 1024} kb with encoding {result['encoding']}"
         )
-        # Read file into datafram
+        # Read file into dataframe
         df = pd.read_csv(
             filename,
             header=[0, 1],  # Use both header lines
@@ -52,21 +54,23 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
     # Merge mean() results
     mdf = pd.concat(results_mean, axis=1)
     if write_excel:
-        mdf.to_excel("mean.xlsx")
-        logger.info("Created mean.xlsx")
-    if write_pdf:
-        mdf.plot()
-        plt.savefig("mean.pdf")
-        logger.info("Created mean.pdf")
-    # Merge sdt() results
+        mdf.to_excel(os.path.join(output_dir, "mean.xlsx"))
+        logger.info(f"Created mean.xlsx in {output_dir}")
+    # if write_pdf:
+    #     mdf.plot()
+    #     plt.savefig(os.path.join(output_dir, "mean.pdf"))
+    #     plt.close()
+    #     logger.info(f"Created mean.pdf in {output_dir}")
+    # Merge std() results
     sdf = pd.concat(results_std, axis=1)
     if write_excel:
-        sdf.to_excel("std.xlsx")
-        logger.info("Created std.xlsx")
-    if write_pdf:
-        sdf.plot()
-        plt.savefig("std.pdf")
-        logger.info("Created std.pdf")
+        sdf.to_excel(os.path.join(output_dir, "std.xlsx"))
+        logger.info(f"Created std.xlsx in {output_dir}")
+    # if write_pdf:
+    #     sdf.plot()
+    #     plt.savefig(os.path.join(output_dir, "std.pdf"))
+    #     plt.close()
+    #     logger.info(f"Created std.pdf in {output_dir}")
 
 
 if __name__ == "__main__":
