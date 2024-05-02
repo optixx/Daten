@@ -49,57 +49,68 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         # Calculate mean and store result
         mean_values = df.mean(numeric_only=True)
         # Add calculated columns
-# N                     
-# M
-# PWG
-# Drosselklappe
-# NW_Einlass
-# m_HFM
-# R_EN.HFM5_Extern
-# m_C_cor_C_2
-# CONSUMPTION
-# Kraftstoffdruck
-# P_Amb
-# T_Amb
-# Phi_Amb
-# lambda_C
-# P_Air_Int
-# P_Exh_O
-# P_TC_1
-# T_TC_1_1
-# T_TC_1_2
-# P_TC_2
-# T_TC_2_1
-# T_TC_2_2
-# P_TC_3
-# P_TC_4
-# p_tot_TC_1_C
-# p_tot_TC_2_C
-# p2t/p1t_C
-# T_Air_Int
-# T_CAC_1
-# T_CAC_2
-# T_Cool_Eng
-# T_Oil_Eng
-# T_TC_1
-# T_TC_IN_LE
-# T_TC_2
-# T_TC_1_05
-# P_TC_IN_LE
-# P_TC_IN_LE_A
-# T_TC_3
-# T_TC_4
-# T_tot_TC_1_C
-# T_tot_TC_2_C
-# N_Turbo
-# N_C_cor_C
-# u_red
-# V_Vehicle
+        # N
+        # M
+        # PWG
+        # Drosselklappe
+        # NW_Einlass
+        # m_HFM
+        # R_EN.HFM5_Extern
+        # m_C_cor_C_2
+        # CONSUMPTION
+        # Kraftstoffdruck
+        # P_Amb
+        # T_Amb
+        # Phi_Amb
+        # lambda_C
+        # P_Air_Int
+        # P_Exh_O
+        # P_TC_1
+        # T_TC_1_1
+        # T_TC_1_2
+        # P_TC_2
+        # T_TC_2_1
+        # T_TC_2_2
+        # P_TC_3
+        # P_TC_4
+        # p_tot_TC_1_C
+        # p_tot_TC_2_C
+        # p2t/p1t_C
+        # T_Air_Int
+        # T_CAC_1
+        # T_CAC_2
+        # T_Cool_Eng
+        # T_Oil_Eng
+        # T_TC_1
+        # T_TC_IN_LE
+        # T_TC_2
+        # T_TC_1_05
+        # P_TC_IN_LE
+        # P_TC_IN_LE_A
+        # T_TC_3
+        # T_TC_4
+        # T_tot_TC_1_C
+        # T_tot_TC_2_C
+        # N_Turbo
+        # N_C_cor_C
+        # u_red
+        # V_Vehicle
+        s = pd.Series(
+            df["P_TC_IN_LE"].values[0] / df["P_TC_1"].values[0],
+            index=[("Q_P_LE/P1", "bar")],
+        )
+        mean_values = pd.concat([mean_values, s])
 
-        mean_values["Q_P_LE/P1"] = df["P_TC_IN_LE"] / df["P_TC_1"]  # Quotient Druck Leading Edge - Eingangsdruck vor TC
-        mean_values["T_LE-T_1_2"] = df["T_TC_IN_LE"] - df["T_TC_1_2"]  # Subtraction Leading Edge - Eingangstemperatur
-        mean_values["T2-T_LE"] = df["T_TC_2"] - df["T_TC_IN_LE"]  # Subtraction T2 (Temperatur nach Verdichter) - Temperatur Leading Edge
-        mean_values["T2-T_1_2"] = df["T_TC_2"] - df["T_TC_1_2"]  # Subtraction of two columns
+        # Subtraction Leading Edge - Eingangstemperatur
+        # mean_values["T_LE-T_1_2"] = df["T_TC_IN_LE"] - df["T_TC_1_2"]
+        # Subtraction T2 (Temperatur nach Verdichter) - Temperatur Leading Edge
+        # mean_values["T2-T_LE"] = df["T_TC_2"] - df["T_TC_IN_LE"]
+        # Subtraction of two columns
+        # mean_values["T2-T_1_2"] = df["T_TC_2"] - df["T_TC_1_2"]
+        with pd.option_context(
+            "display.max_rows", None, "display.max_columns", None
+        ):  # more options can be specified also
+            print(mean_values)
         results_mean.append(mean_values)
         # Calc std() and store result
         results_std.append(df.std(numeric_only=True))
@@ -127,21 +138,23 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         plt.savefig(os.path.join(output_dir, "std.pdf"))
         plt.close()
         logger.info(f"Created std.pdf in {output_dir}")
-         
-         
- # Merge std()and mean() results in one Excel File
- 
+
+    # Merge std()and mean() results in one Excel File
+
     if write_excel:
         with pd.ExcelWriter(os.path.join(output_dir, "summary.xlsx")) as writer:
             # Modify index names of sdf DataFrame
-            modified_index = [(f"{idx[0]}_s", idx[1]) if isinstance(idx, tuple) and i != 1 else idx for i, idx in enumerate(sdf.index)]
+            modified_index = [
+                (f"{idx[0]}_s", idx[1]) if isinstance(idx, tuple) and i != 1 else idx
+                for i, idx in enumerate(sdf.index)
+            ]
             sdf.index = pd.MultiIndex.from_tuples(modified_index)
 
             # Concatenate mean and std DataFrames vertically
             combined_df = pd.concat([mdf, sdf])
 
             # Write combined DataFrame to Excel
-            combined_df.to_excel(writer, sheet_name='Summary')
+            combined_df.to_excel(writer, sheet_name="Summary")
 
     logger.info(f"Created summary.xlsx in {output_dir}")
 
