@@ -48,65 +48,30 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         )
         # Calculate mean and store result
         mean_values = df.mean(numeric_only=True)
-        # Add calculated columns
-        # N
-        # M
-        # PWG
-        # Drosselklappe
-        # NW_Einlass
-        # m_HFM
-        # R_EN.HFM5_Extern
-        # m_C_cor_C_2
-        # CONSUMPTION
-        # Kraftstoffdruck
-        # P_Amb
-        # T_Amb
-        # Phi_Amb
-        # lambda_C
-        # P_Air_Int
-        # P_Exh_O
-        # P_TC_1
-        # T_TC_1_1
-        # T_TC_1_2
-        # P_TC_2
-        # T_TC_2_1
-        # T_TC_2_2
-        # P_TC_3
-        # P_TC_4
-        # p_tot_TC_1_C
-        # p_tot_TC_2_C
-        # p2t/p1t_C
-        # T_Air_Int
-        # T_CAC_1
-        # T_CAC_2
-        # T_Cool_Eng
-        # T_Oil_Eng
-        # T_TC_1
-        # T_TC_IN_LE
-        # T_TC_2
-        # T_TC_1_05
-        # P_TC_IN_LE
-        # P_TC_IN_LE_A
-        # T_TC_3
-        # T_TC_4
-        # T_tot_TC_1_C
-        # T_tot_TC_2_C
-        # N_Turbo
-        # N_C_cor_C
-        # u_red
-        # V_Vehicle
         s = pd.Series(
             df["P_TC_IN_LE"].values[0] / df["P_TC_1"].values[0],
             index=[("Q_P_LE/P1", "bar")],
         )
         mean_values = pd.concat([mean_values, s])
-
         # Subtraction Leading Edge - Eingangstemperatur
-        # mean_values["T_LE-T_1_2"] = df["T_TC_IN_LE"] - df["T_TC_1_2"]
+        s = pd.Series(
+            df["T_TC_IN_LE"].values[0] / df["T_TC_1_2"].values[0],
+            index=[("T_LE-T_1_2", "bar")],
+        )
+        mean_values = pd.concat([mean_values, s])
+
         # Subtraction T2 (Temperatur nach Verdichter) - Temperatur Leading Edge
-        # mean_values["T2-T_LE"] = df["T_TC_2"] - df["T_TC_IN_LE"]
+        s = pd.Series(
+            df["T_TC_2"].values[0] / df["T_TC_IN_LE"].values[0],
+            index=[("T2-T_LE", "bar")],
+        )
+        mean_values = pd.concat([mean_values, s])
         # Subtraction of two columns
-        # mean_values["T2-T_1_2"] = df["T_TC_2"] - df["T_TC_1_2"]
+        s = pd.Series(
+            df["T_TC_2"].values[0] / df["T_TC_1_2"].values[0],
+            index=[("T2-T_1_2", "bar")],
+        )
+        mean_values = pd.concat([mean_values, s])
         with pd.option_context(
             "display.max_rows", None, "display.max_columns", None
         ):  # more options can be specified also
@@ -117,9 +82,8 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
 
     # Merge mean() results
     mdf = pd.concat(results_mean, axis=1)
-    print(mdf.columns)
     # Subtract values from "P_TC_2" channel from "P_TC_1" channel and store the result in a new column
-    mdf["P_TC_2_minus_P_TC_1"] = mdf["P_TC_1"] - mdf["P_TC_2"]
+    # mdf["P_TC_2_minus_P_TC_1"] = mdf["P_TC_1"] - mdf["P_TC_2"]
     if write_excel:
         mdf.to_excel(os.path.join(output_dir, "mean.xlsx"))
         logger.info(f"Created mean.xlsx in {output_dir}")
