@@ -47,35 +47,15 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
             na_values={"?"},
         )
         # Calculate mean and store result
-        mean_values = df.mean(numeric_only=True)
-        s = pd.Series(
-            df["P_TC_IN_LE"].values[0] / df["P_TC_1"].values[0],
-            index=[("Q_P_LE/P1", "bar")],
-        )
-        mean_values = pd.concat([mean_values, s])
-        # Subtraction Leading Edge - Eingangstemperatur
-        s = pd.Series(
-            df["T_TC_IN_LE"].values[0] / df["T_TC_1_2"].values[0],
-            index=[("T_LE-T_1_2", "bar")],
-        )
-        mean_values = pd.concat([mean_values, s])
+        # Berechne die neuen Kanäle
+        # Berechne die neuen Kanäle und füge sie direkt zum DataFrame hinzu
+        df["Q_P_LE/P1"] = df["P_TC_IN_LE"] / df["P_TC_1"]
+        df["T_LE-T_1_2"] = df["T_TC_IN_LE"] / df["T_TC_1_2"]
+        df["T2-T_LE"] = df["T_TC_2"] / df["T_TC_IN_LE"]
+        df["T2-T_1_2"] = df["T_TC_2"] / df["T_TC_1_2"]
 
-        # Subtraction T2 (Temperatur nach Verdichter) - Temperatur Leading Edge
-        s = pd.Series(
-            df["T_TC_2"].values[0] / df["T_TC_IN_LE"].values[0],
-            index=[("T2-T_LE", "bar")],
-        )
-        mean_values = pd.concat([mean_values, s])
-        # Subtraction of two columns
-        s = pd.Series(
-            df["T_TC_2"].values[0] / df["T_TC_1_2"].values[0],
-            index=[("T2-T_1_2", "bar")],
-        )
-        mean_values = pd.concat([mean_values, s])
-        with pd.option_context(
-            "display.max_rows", None, "display.max_columns", None
-        ):  # more options can be specified also
-            print(mean_values)
+        mean_values = df.mean(numeric_only=True)
+        print(mean_values)
         results_mean.append(mean_values)
         # Calc std() and store result
         results_std.append(df.std(numeric_only=True))
