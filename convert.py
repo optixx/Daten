@@ -74,14 +74,14 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
 
         intermediate_result = df["P_TC_1"]["bar"] * 100000
         print("intermediate_result", intermediate_result)
-        intermediate_result_1 = intermediate_result + df["P_Amb"]["mbar"]
+        intermediate_result_1 = intermediate_result + df["P_Amb"]["mbar"]*100
         print("intermediate_result_1", intermediate_result_1)
         intermediate_result_2= intermediate_result_1 / (K_GC_R_LUFT * (df["T_Amb"]["°C"] + 273.15))
         print(intermediate_result_2)
 
         # # Assign the intermediate result to the new column
         df["Rho_TC_1_C"] = intermediate_result_2
-        #df.loc[0:,"Rho_TC_1_C"] = ( df.loc[0:,"P_TC_1"] * 100000 + df.loc[0:,"P_Amb"]) / (K_GC_R_LUFT * ( df.loc[0:,"T_Amb"] + 273.15))
+        
         #df["Rho_TC_1_C"] = (df["P_TC_1"] * 100000 + df["P_Amb"]) / (K_GC_R_LUFT * (df["T_Amb"] + 273.15))
      
         df["Vel_TC_1_C"] = df["m_HFM"] ["kg/h"]/ 3600 / df["Rho_TC_1_C"] / (KEN_AREA_TC1 / 10**6)
@@ -90,7 +90,7 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         
         mean_values = df.mean(numeric_only=True)
 
-        #print(mean_values)  
+        print(mean_values)  
         results_mean.append(mean_values)
         # Calc std() and store result
         results_std.append(df.std(numeric_only=True))
@@ -131,9 +131,13 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
 
             # Concatenate mean and std DataFrames vertically
             combined_df = pd.concat([mdf, sdf])
+             # Transpose the combined DataFrame
+            combined_df_transposed = combined_df.T
 
+            # Write transposed DataFrame to Excel
+            combined_df_transposed.to_excel(writer, sheet_name="Summary")
             # Write combined DataFrame to Excel
-            combined_df.to_excel(writer, sheet_name="Summary")
+            #combined_df.to_excel(writer, sheet_name="Summary")
 
     logger.info(f"Created summary.xlsx in {output_dir}")
 
