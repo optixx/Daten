@@ -15,7 +15,7 @@ logger = logging.getLogger()
 # Definition der Konstanten außerhalb der Funktion main()
 K_GC_R_LUFT = 287.2
 KEN_AREA_TC1 = 1963.495408
-K_GC_P_AIR = 1005.2
+K_GC_P_AIR = 1005.2 #J/kgK eventuell auf 1012
 K_GC_KAPPA_AIR = 1.4
 
 
@@ -23,16 +23,17 @@ K_GC_KAPPA_AIR = 1.4
 
 @click.command()
 @click.option("--path", prompt="The path", help="Location of files")
-@click.option("--prefix", prompt="The file prefix pattern",default= "1khz", help="File prefix pattern")
+@click.option("--prefix", default= "1khz", help="File prefix pattern")
 @click.option("--skip-header", default=2, help="Number header lines to skip")
 @click.option("--write-excel", default=True, help="Write results to excel files")
+@click.option("--write-excel-s", default=False, help="Write results to excel files")
 @click.option("--write-pdf", default=False, help="Plot results to pdf file")
 
 
 
 
 
-def main(path, prefix, skip_header, write_excel, write_pdf):
+def main(path, prefix, skip_header, write_excel,write_excel_s,write_pdf):
     results_mean = []
     results_std = []
     output_dir = os.path.abspath(path)  # Get absolute path for output directory
@@ -62,10 +63,10 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         
         # Berechne die neuen Kanäle und füge sie direkt zum DataFrame hinzu
         print(df.columns)
-        df["Q_P_LE/P1"] = df["P_TC_IN_LE"] / df["P_TC_1"]
-        df["T_LE-T_1_2"] = df["T_TC_IN_LE"] - df["T_TC_1_2"]
-        df["T2-T_LE"] = df["T_TC_2"] - df["T_TC_IN_LE"]
-        df["T2-T_1_2"] = df["T_TC_2"] - df["T_TC_1_2"]
+        df["Q_P_LE/P1","bar"] = df["P_TC_IN_LE"] / df["P_TC_1"]
+        df["T_LE-T_1_2","°C"] = df["T_TC_IN_LE"] - df["T_TC_1_2"]
+        df["T2-T_LE","°C"] = df["T_TC_2"] - df["T_TC_IN_LE"]
+        df["T2-T_1_2","°C"] = df["T_TC_2"] - df["T_TC_1_2"]
         # Print out individual components of the calculation
         print("P_amb",df["P_Amb"]["mbar"])
         
@@ -80,13 +81,24 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         print(intermediate_result_2)
 
         # # Assign the intermediate result to the new column
-        df["Rho_TC_1_C"] = intermediate_result_2
+        df["Rho_TC_1_C","kg/m^3"] = intermediate_result_2
+        df["Rho_TC_2_C","kg/m^3"] = (df["P_TC_2"]["bar"] * 100000 + df["P_Amb"]["mbar"]) / (K_GC_R_LUFT * (df["P_Air_Int"]["°C"] + 273.15))
+
+        df["Vel_TC_1_C"] = df["m_HFM"] ["kg/h"]/ 3600 / df["Rho_TC_1_C"]["kg/m^3"] / (KEN_AREA_TC1 / 10**6)
+        df["Vel_TC_2_C"] = df["m_HFM"] ["kg/h"]/ 3600 / df["Rho_TC_2_C"]["kg/m^3"] / (KEN_AREA_TC1 / 10**6)
         
-        #df["Rho_TC_1_C"] = (df["P_TC_1"] * 100000 + df["P_Amb"]) / (K_GC_R_LUFT * (df["T_Amb"] + 273.15))
-     
-        df["Vel_TC_1_C"] = df["m_HFM"] ["kg/h"]/ 3600 / df["Rho_TC_1_C"] / (KEN_AREA_TC1 / 10**6)
-        df["Totaltemperatur_1"] = df["T_Amb"]["°C"] + 273.15 + (df["Vel_TC_1_C"]**2) / (2 * K_GC_P_AIR)
-        print(("RESULT"),df.Totaltemperatur_1)
+        
+        df["Totaltemperatur_1","K"] = df["T_Amb"]["°C"] + 273.15 + (df["Vel_TC_1_C"]**2) / (2 * K_GC_P_AIR)
+        df["Totaltemperatur_2", "K"] = df["T_TC_2"]["°C"] + 273.15 + (df["Vel_TC_2_C"]**2) / (2 * K_GC_P_AIR)
+
+        df["p_tot_TC_1", "bar"] = (df["P_TC_1"]["bar"] + df["P_Amb"]["mbar"] / 1000) * (1 + df["Vel_TC_1_C"]**2 / (2 * K_GC_P_AIR * (df["T_Amb"]["°C"] + 273.15)))**(K_GC_KAPPA_AIR / (K_GC_KAPPA_AIR - 1))
+        df["p_tot_TC_2", "bar"] = (df["P_TC_2"]["bar"] + df["P_Amb"]["mbar"] / 1000) * (1 + df["Vel_TC_2_C"]**2 / (2 * K_GC_P_AIR * (df["T_Amb"]["°C"] + 273.15)))**(K_GC_KAPPA_AIR / (K_GC_KAPPA_AIR - 1))
+
+        print(("Totaltemperatur_1"),df.Totaltemperatur_1)
+        print(("Totaltemperatur_2"),df.Totaltemperatur_2)
+        print(("p_tot_TC_1"),df.p_tot_TC_1)
+        print(("p_tot_TC_2"),df.p_tot_TC_2)
+        
         
         mean_values = df.mean(numeric_only=True)
 
@@ -99,7 +111,7 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
     # Merge mean() results
     mdf = pd.concat(results_mean, axis=1)
 
-    if write_excel:
+    if write_excel_s:
         mdf.to_excel(os.path.join(output_dir, "mean.xlsx"))
         logger.info(f"Created mean.xlsx in {output_dir}")
     if write_pdf:
@@ -109,7 +121,7 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
         logger.info(f"Created mean.pdf in {output_dir}")
     # Merge std() results
     sdf = pd.concat(results_std, axis=1)
-    if write_excel:
+    if write_excel_s:
         sdf.to_excel(os.path.join(output_dir, "std.xlsx"))
         logger.info(f"Created std.xlsx in {output_dir}")
     if write_pdf:
@@ -139,7 +151,7 @@ def main(path, prefix, skip_header, write_excel, write_pdf):
             # Write combined DataFrame to Excel
             #combined_df.to_excel(writer, sheet_name="Summary")
 
-    logger.info(f"Created summary.xlsx in {output_dir}")
+        logger.info(f"Created summary.xlsx in {output_dir}")
 
 
 if __name__ == "__main__":
